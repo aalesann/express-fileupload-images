@@ -1,10 +1,14 @@
 const express = require('express');
 const fileupload = require('express-fileupload');
+const morgan = require('morgan');
 const path = require('path');
 
 const app = express();
 
 app.set('port', process.env.PORT || 3000);
+app.use(morgan('dev'));
+app.use(express.json());;
+app.use(express.urlencoded({ extended:false, limit:'10mb'}))
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(fileupload());
 
@@ -34,6 +38,31 @@ app.post('/upload', (req, res) => {
         // Si la imagen fue subida correctamente se redirecciona nuevamente
         // a la ruta que devuelve la página del formulario.
         res.redirect('/')
+    });
+    
+});
+
+// Recibe múltiples archivos - el atributo name debe ser "img"
+app.post('/upload/multiple', (req, res) => {
+    // console.log(req.files)
+    const { img } = req.files;
+
+    // Se mueven todas las imágenes recibidas a la carpeta pública
+    // Crear la carpeta img si es que no existe
+    img.forEach( (image, i) => {
+        image.mv(path.join(__dirname, `public/img/${image.name}`), (error) => {
+            if (error) {
+                console.log(error)
+                return res.status(400).json({
+                    msg: 'No se pudo subir la imagen'
+                });
+            }    
+        });
+    });
+    
+    res.json({
+        msg: 'Imagenes subidas correctamente',
+        img
     });
     
 });
